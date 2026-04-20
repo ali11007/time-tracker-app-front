@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { DEFAULT_DRAFT, today } from '../constants';
+import { useEffect, useState } from 'react';
+import { DEFAULT_DRAFT, toEntryDraft } from '../constants';
+import { combineDateAndTimeToIso, currentTime, todayDate } from '../utils/dateTime';
 
 const fieldClassName =
   'mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-500 focus:ring-4 focus:ring-sky-100';
@@ -14,8 +15,20 @@ function TrackerForm({
   onStopTimer,
   isTimerRunning,
   isCreating,
+  isStartingTimer,
+  isStoppingTimer,
+  activeTimer,
 }) {
   const [draft, setDraft] = useState(DEFAULT_DRAFT);
+
+  useEffect(() => {
+    if (activeTimer) {
+      setDraft((current) => ({
+        ...current,
+        ...toEntryDraft(activeTimer),
+      }));
+    }
+  }, [activeTimer]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -23,7 +36,13 @@ function TrackerForm({
   };
 
   const resetDraft = () => {
-    setDraft({ ...DEFAULT_DRAFT, date: today() });
+    setDraft({
+      ...DEFAULT_DRAFT,
+      startDate: todayDate(),
+      startTime: currentTime(),
+      endDate: todayDate(),
+      endTime: currentTime(),
+    });
   };
 
   const handleManualSubmit = async (event) => {
@@ -36,16 +55,22 @@ function TrackerForm({
         .split(',')
         .map((tag) => tag.trim())
         .filter(Boolean),
-      date: draft.date,
-      durationSeconds: Math.max(60, Number(draft.durationMinutes || 0) * 60),
-      type: 'manual',
+      startAt: combineDateAndTimeToIso(draft.startDate, draft.startTime),
+      endAt: combineDateAndTimeToIso(draft.endDate, draft.endTime),
     });
 
     resetDraft();
   };
 
-  const handleStartTimer = () => {
-    onStartTimer(draft);
+  const handleStartTimer = async () => {
+    await onStartTimer({
+      name: draft.name.trim(),
+      project: draft.project.trim(),
+      tags: draft.tags
+        .split(',')
+        .map((tag) => tag.trim())
+        .filter(Boolean),
+    });
   };
 
   const handleStopTimer = async () => {
@@ -127,36 +152,54 @@ function TrackerForm({
           />
         </label>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className={labelClassName}>
-            Date
-            <input
-              className={fieldClassName}
-              name="date"
-              type="date"
-              value={draft.date}
-              onChange={handleChange}
-            />
-          </label>
-
-          {entryMode === 'manual' ? (
+        {entryMode === 'manual' ? (
+          <div className="grid gap-4 sm:grid-cols-2">
             <label className={labelClassName}>
-              Duration (minutes)
+              Start date
               <input
                 className={fieldClassName}
-                name="durationMinutes"
-                type="number"
-                min="1"
-                value={draft.durationMinutes}
+                name="startDate"
+                type="date"
+                value={draft.startDate}
                 onChange={handleChange}
               />
             </label>
-          ) : (
-            <div className="rounded-2xl border border-dashed border-sky-200 bg-sky-50/70 px-4 py-3 text-sm text-sky-800">
-              Timer entries use the live start/stop duration and submit the same metadata.
-            </div>
-          )}
-        </div>
+            <label className={labelClassName}>
+              Start time
+              <input
+                className={fieldClassName}
+                name="startTime"
+                type="time"
+                value={draft.startTime}
+                onChange={handleChange}
+              />
+            </label>
+            <label className={labelClassName}>
+              End date
+              <input
+                className={fieldClassName}
+                name="endDate"
+                type="date"
+                value={draft.endDate}
+                onChange={handleChange}
+              />
+            </label>
+            <label className={labelClassName}>
+              End time
+              <input
+                className={fieldClassName}
+                name="endTime"
+                type="time"
+                value={draft.endTime}
+                onChange={handleChange}
+              />
+            </label>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-dashed border-sky-200 bg-sky-50/70 px-4 py-3 text-sm text-sky-800">
+            Timer entries start on the server, keep running across reloads, and are saved by stopping the active timer id.
+          </div>
+        )}
 
         {entryMode === 'manual' ? (
           <button
@@ -170,18 +213,19 @@ function TrackerForm({
           <button
             className="mt-2 inline-flex items-center justify-center rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
             type="button"
-            disabled={!canSubmit}
+            disabled={!canSubmit || isStartingTimer}
             onClick={handleStartTimer}
           >
-            Start timer
+            {isStartingTimer ? 'Starting timer...' : 'Start timer'}
           </button>
         ) : (
           <button
-            className="mt-2 inline-flex items-center justify-center rounded-2xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-rose-600/20 transition hover:bg-rose-500"
+            className="mt-2 inline-flex items-center justify-center rounded-2xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-rose-600/20 transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-60"
             type="button"
             onClick={handleStopTimer}
+            disabled={isStoppingTimer}
           >
-            Stop timer and save
+            {isStoppingTimer ? 'Stopping timer...' : 'Stop timer and save'}
           </button>
         )}
       </form>

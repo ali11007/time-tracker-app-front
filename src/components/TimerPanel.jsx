@@ -1,6 +1,6 @@
 import { formatDuration } from '../utils/formatDuration';
 
-function TimerPanel({ isRunning, elapsedSeconds, timerName }) {
+function TimerPanel({ isRunning, elapsedSeconds, timerName, timerProject, startedAt }) {
   if (!isRunning) return null;
 
   return (
@@ -12,6 +12,9 @@ function TimerPanel({ isRunning, elapsedSeconds, timerName }) {
         <strong className="mt-2 block text-2xl font-semibold text-slate-950">
           {timerName || 'Untitled task'}
         </strong>
+        <p className="mt-1 text-sm text-emerald-900/80">
+          {timerProject || 'No project'}{startedAt ? ` - started ${new Date(startedAt).toLocaleString()}` : ''}
+        </p>
       </div>
       <strong className="text-3xl font-semibold tabular-nums text-emerald-800">
         {formatDuration(elapsedSeconds)}

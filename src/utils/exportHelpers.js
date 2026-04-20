@@ -26,9 +26,9 @@ export const downloadFile = (filename, content, type) => {
 };
 
 export const toCsv = (items) => {
-  const headers = ['name', 'project', 'tags', 'date', 'durationSeconds', 'type'];
+  const headers = ['name', 'project', 'tags', 'date', 'startAt', 'endAt', 'durationSeconds', 'type', 'isActive'];
   const rows = items.map((item) =>
-    [item.name, item.project, getTagsValue(item.tags), item.date, item.durationSeconds, item.type]
+    [item.name, item.project, getTagsValue(item.tags), item.date, item.startAt, item.endAt, item.durationSeconds, item.type, item.isActive]
       .map(escapeCsvValue)
       .join(','),
   );

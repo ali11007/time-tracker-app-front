@@ -3,10 +3,10 @@ import { API_PATHS } from '../constants';
 
 const sortEntries = (entries) =>
   [...entries].sort((left, right) => {
-    const leftCreatedAt = left.createdAt || '';
-    const rightCreatedAt = right.createdAt || '';
+    const leftStartAt = left.startAt || '';
+    const rightStartAt = right.startAt || '';
 
-    return right.date.localeCompare(left.date) || rightCreatedAt.localeCompare(leftCreatedAt);
+    return rightStartAt.localeCompare(leftStartAt) || (right.createdAt || '').localeCompare(left.createdAt || '');
   });
 
 export const trackerApi = {
@@ -26,13 +26,28 @@ export const trackerApi = {
       responseType: 'blob',
     });
   },
-  async createEntry(entry) {
+  async createManualEntry(entry) {
     const payload = {
       ...entry,
       tags: Array.isArray(entry.tags) ? entry.tags : [],
+      type: 'manual',
     };
 
-    const { data } = await apiClient.post(API_PATHS.entries, payload);
+    const { data } = await apiClient.post(API_PATHS.manualEntries, payload);
+    return data;
+  },
+  async startTimer(entry) {
+    const payload = {
+      name: entry.name,
+      project: entry.project,
+      tags: Array.isArray(entry.tags) ? entry.tags : [],
+    };
+
+    const { data } = await apiClient.post(API_PATHS.timerStart, payload);
+    return data;
+  },
+  async stopTimer(entryId) {
+    const { data } = await apiClient.post(API_PATHS.timerStop(entryId));
     return data;
   },
   async deleteEntry(entryId) {

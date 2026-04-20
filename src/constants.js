@@ -1,3 +1,5 @@
+import { currentTime, splitIsoToLocalParts, todayDate } from './utils/dateTime';
+
 export const APP_ROUTES = {
   dashboard: '/',
   login: '/login',
@@ -13,6 +15,9 @@ export const API_PATHS = {
     login: import.meta.env.VITE_AUTH_LOGIN_PATH || '/auth/login',
   },
   entries: '/time-entries',
+  manualEntries: '/time-entries/manual',
+  timerStart: '/time-entries/timer/start',
+  timerStop: (entryId) => `/time-entries/${entryId}/stop`,
   entryById: (entryId) => `/time-entries/${entryId}`,
   exports: {
     csv: '/time-entries/export/csv',
@@ -20,21 +25,30 @@ export const API_PATHS = {
   },
 };
 
-export const today = () => new Date().toISOString().slice(0, 10);
+export const today = todayDate;
 
 export const DEFAULT_DRAFT = {
   name: '',
   project: '',
   tags: '',
-  date: today(),
-  durationMinutes: '30',
+  startDate: todayDate(),
+  startTime: currentTime(),
+  endDate: todayDate(),
+  endTime: currentTime(),
 };
 
-export const toEntryDraft = (entry) => ({
-  name: entry.name || '',
-  project: entry.project || '',
-  tags: Array.isArray(entry.tags) ? entry.tags.join(', ') : '',
-  date: entry.date || today(),
-  durationMinutes: String(Math.max(1, Math.round(Number(entry.durationSeconds || 0) / 60))),
-  type: entry.type || 'manual',
-});
+export const toEntryDraft = (entry) => {
+  const start = splitIsoToLocalParts(entry.startAt);
+  const end = splitIsoToLocalParts(entry.endAt || entry.startAt);
+
+  return {
+    name: entry.name || '',
+    project: entry.project || '',
+    tags: Array.isArray(entry.tags) ? entry.tags.join(', ') : '',
+    startDate: start.date,
+    startTime: start.time,
+    endDate: end.date,
+    endTime: end.time,
+    type: entry.type || 'manual',
+  };
+};

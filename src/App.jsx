@@ -23,43 +23,69 @@ const formatUserLabel = (user) => {
   );
 };
 
+const readActionError = (error) =>
+  error?.response?.data?.message || error?.message || 'The request failed. Please try again.';
+
 function App() {
   const [entryMode, setEntryMode] = useState('manual');
   const [filterText, setFilterText] = useState('');
+  const [actionError, setActionError] = useState('');
   const { currentUser, logout } = useAuth();
   const {
     entries,
+    activeEntry,
     totalTrackedSeconds,
     isLoading,
     isError,
     error,
     createEntry,
+    startTimer,
+    stopTimer,
     updateEntry,
     deleteEntry,
     isCreating,
+    isStartingTimer,
+    isStoppingTimer,
     isUpdating,
     isDeleting,
   } = useEntries(filterText);
-  const timer = useTimer();
+  const timer = useTimer(activeEntry);
+
+  const handleCreateManual = async (payload) => {
+    setActionError('');
+
+    try {
+      await createEntry(payload);
+    } catch (requestError) {
+      setActionError(readActionError(requestError));
+    }
+  };
+
+  const handleStartTimer = async (payload) => {
+    setActionError('');
+
+    try {
+      const entry = await startTimer(payload);
+      timer.start(entry);
+      setEntryMode('timer');
+    } catch (requestError) {
+      setActionError(readActionError(requestError));
+    }
+  };
 
   const handleStopTimer = async () => {
-    const result = timer.stop();
-
-    if (!result) {
+    if (!timer.activeTimer?.id) {
       return;
     }
 
-    await createEntry({
-      name: result.name.trim(),
-      project: result.project.trim(),
-      tags: result.tags
-        .split(',')
-        .map((tag) => tag.trim())
-        .filter(Boolean),
-      date: result.date,
-      durationSeconds: result.durationSeconds,
-      type: 'timer',
-    });
+    setActionError('');
+
+    try {
+      const stoppedEntry = await stopTimer(timer.activeTimer.id);
+      timer.stop(stoppedEntry);
+    } catch (requestError) {
+      setActionError(readActionError(requestError));
+    }
   };
 
   return (
@@ -81,8 +107,7 @@ function App() {
                   Track manual work, live timers, and exports from one workspace.
                 </h1>
                 <p className="max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
-                  Your time entry actions now run behind JWT-protected API requests, with route
-                  protection and session persistence layered into the existing tracker flow.
+                  Manual entries now capture real start and end timestamps, while timer entries start on the backend, survive reloads, and stop by entry id.
                 </p>
               </div>
             </div>
@@ -123,6 +148,8 @@ function App() {
           isRunning={timer.isRunning}
           elapsedSeconds={timer.elapsedSeconds}
           timerName={timer.activeTimer?.name}
+          timerProject={timer.activeTimer?.project}
+          startedAt={timer.activeTimer?.startAt}
         />
 
         {isError ? (
@@ -131,15 +158,24 @@ function App() {
           </section>
         ) : null}
 
+        {actionError ? (
+          <section className="rounded-[1.5rem] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700 shadow-sm">
+            {actionError}
+          </section>
+        ) : null}
+
         <section className="grid gap-6 xl:grid-cols-[minmax(340px,400px)_1fr]">
           <TrackerForm
             entryMode={entryMode}
             onModeChange={setEntryMode}
-            onSubmitManual={createEntry}
-            onStartTimer={timer.start}
+            onSubmitManual={handleCreateManual}
+            onStartTimer={handleStartTimer}
             onStopTimer={handleStopTimer}
             isTimerRunning={timer.isRunning}
             isCreating={isCreating}
+            isStartingTimer={isStartingTimer}
+            isStoppingTimer={isStoppingTimer}
+            activeTimer={timer.activeTimer}
           />
 
           <section className="rounded-[1.75rem] border border-white/70 bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur sm:p-6">
