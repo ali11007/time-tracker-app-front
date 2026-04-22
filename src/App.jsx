@@ -3,8 +3,10 @@ import TrackerForm from './components/TrackerForm';
 import TimerPanel from './components/TimerPanel';
 import EntryList from './components/EntryList';
 import ExportBar from './components/ExportBar';
+import WorkspaceLibrary from './components/WorkspaceLibrary';
 import { useEntries } from './hooks/useEntries';
 import { useTimer } from './hooks/useTimer';
+import { useWorkspaceCatalog } from './hooks/useWorkspaceCatalog';
 import { formatDuration } from './utils/formatDuration';
 import { API_BASE_URL } from './constants';
 import { useAuth } from './context/AuthContext';
@@ -49,28 +51,43 @@ function App() {
     isUpdating,
     isDeleting,
   } = useEntries(filterText);
+  const {
+    projects,
+    tags,
+    createProject,
+    updateProject,
+    deleteProject,
+    createTag,
+    updateTag,
+    deleteTag,
+    isLoadingProjects,
+    isLoadingTags,
+    isCreatingProject,
+    isUpdatingProject,
+    isDeletingProject,
+    isCreatingTag,
+    isUpdatingTag,
+    isDeletingTag,
+  } = useWorkspaceCatalog();
   const timer = useTimer(activeEntry);
 
-  const handleCreateManual = async (payload) => {
+  const withActionError = async (callback) => {
     setActionError('');
 
     try {
-      await createEntry(payload);
+      return await callback();
     } catch (requestError) {
       setActionError(readActionError(requestError));
+      throw requestError;
     }
   };
 
-  const handleStartTimer = async (payload) => {
-    setActionError('');
+  const handleCreateManual = (payload) => withActionError(() => createEntry(payload));
 
-    try {
-      const entry = await startTimer(payload);
-      timer.start(entry);
-      setEntryMode('timer');
-    } catch (requestError) {
-      setActionError(readActionError(requestError));
-    }
+  const handleStartTimer = async (payload) => {
+    const entry = await withActionError(() => startTimer(payload));
+    timer.start(entry);
+    setEntryMode('timer');
   };
 
   const handleStopTimer = async () => {
@@ -78,14 +95,15 @@ function App() {
       return;
     }
 
-    setActionError('');
+    const stoppedEntry = await withActionError(() => stopTimer(timer.activeTimer.id));
+    timer.stop(stoppedEntry);
+  };
 
-    try {
-      const stoppedEntry = await stopTimer(timer.activeTimer.id);
-      timer.stop(stoppedEntry);
-    } catch (requestError) {
-      setActionError(readActionError(requestError));
-    }
+  const handleDeleteEntry = (entryId) => {
+    setActionError('');
+    deleteEntry(entryId, {
+      onError: (requestError) => setActionError(readActionError(requestError)),
+    });
   };
 
   return (
@@ -104,10 +122,10 @@ function App() {
               </div>
               <div className="space-y-3">
                 <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
-                  Track manual work, live timers, and exports from one workspace.
+                  Track time against curated projects, shared tags, and exports from one workspace.
                 </h1>
                 <p className="max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
-                  Manual entries now capture real start and end timestamps, while timer entries start on the backend, survive reloads, and stop by entry id.
+                  Entries now use a saved project library, while tags can be picked from your shared catalog or created naturally as you log work.
                 </p>
               </div>
             </div>
@@ -122,7 +140,7 @@ function App() {
                   Log out
                 </button>
               </div>
-              <div className="grid min-w-full gap-3 sm:grid-cols-3">
+              <div className="grid min-w-full gap-3 sm:grid-cols-4">
                 <div className="rounded-[1.4rem] bg-slate-950 px-5 py-4 text-white shadow-lg shadow-slate-950/10">
                   <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Entries</p>
                   <strong className="mt-3 block text-3xl font-semibold">{entries.length}</strong>
@@ -133,12 +151,24 @@ function App() {
                     {formatDuration(totalTrackedSeconds)}
                   </strong>
                 </div>
-                <div className="rounded-[1.4rem] border border-sky-100 bg-sky-50 px-5 py-4 text-slate-900">
-                  <p className="text-xs uppercase tracking-[0.2em] text-sky-700">Base URL</p>
-                  <strong className="mt-3 block truncate text-sm font-semibold sm:text-base">
-                    {API_BASE_URL}
+                <div className="rounded-[1.4rem] border border-emerald-100 bg-emerald-50 px-5 py-4 text-slate-900">
+                  <p className="text-xs uppercase tracking-[0.2em] text-emerald-700">Projects</p>
+                  <strong className="mt-3 block text-3xl font-semibold">
+                    {isLoadingProjects ? '...' : projects.length}
                   </strong>
                 </div>
+                <div className="rounded-[1.4rem] border border-sky-100 bg-sky-50 px-5 py-4 text-slate-900">
+                  <p className="text-xs uppercase tracking-[0.2em] text-sky-700">Tags</p>
+                  <strong className="mt-3 block text-3xl font-semibold">
+                    {isLoadingTags ? '...' : tags.length}
+                  </strong>
+                </div>
+              </div>
+              <div className="rounded-[1.4rem] border border-slate-200 bg-white px-5 py-4 text-slate-900">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Base URL</p>
+                <strong className="mt-3 block truncate text-sm font-semibold sm:text-base">
+                  {API_BASE_URL}
+                </strong>
               </div>
             </div>
           </div>
@@ -164,7 +194,7 @@ function App() {
           </section>
         ) : null}
 
-        <section className="grid gap-6 xl:grid-cols-[minmax(340px,400px)_1fr]">
+        <section className="grid gap-6 xl:grid-cols-[minmax(360px,420px)_1fr]">
           <TrackerForm
             entryMode={entryMode}
             onModeChange={setEntryMode}
@@ -176,6 +206,10 @@ function App() {
             isStartingTimer={isStartingTimer}
             isStoppingTimer={isStoppingTimer}
             activeTimer={timer.activeTimer}
+            projects={projects}
+            tags={tags}
+            onCreateProject={(payload) => withActionError(() => createProject(payload))}
+            isCreatingProject={isCreatingProject}
           />
 
           <section className="rounded-[1.75rem] border border-white/70 bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur sm:p-6">
@@ -189,12 +223,33 @@ function App() {
               entries={entries}
               isLoading={isLoading}
               onUpdate={updateEntry}
-              onDelete={deleteEntry}
+              onDelete={handleDeleteEntry}
               isUpdating={isUpdating}
               isDeleting={isDeleting}
+              projects={projects}
+              tags={tags}
+              onCreateProject={(payload) => withActionError(() => createProject(payload))}
+              isCreatingProject={isCreatingProject}
             />
           </section>
         </section>
+
+        <WorkspaceLibrary
+          projects={projects}
+          tags={tags}
+          onCreateProject={(payload) => withActionError(() => createProject(payload))}
+          onUpdateProject={(payload) => withActionError(() => updateProject(payload))}
+          onDeleteProject={(projectId) => withActionError(() => deleteProject(projectId))}
+          onCreateTag={(payload) => withActionError(() => createTag(payload))}
+          onUpdateTag={(payload) => withActionError(() => updateTag(payload))}
+          onDeleteTag={(tagId) => withActionError(() => deleteTag(tagId))}
+          isCreatingProject={isCreatingProject}
+          isUpdatingProject={isUpdatingProject}
+          isDeletingProject={isDeletingProject}
+          isCreatingTag={isCreatingTag}
+          isUpdatingTag={isUpdatingTag}
+          isDeletingTag={isDeletingTag}
+        />
       </div>
     </main>
   );

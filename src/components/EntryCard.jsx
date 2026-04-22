@@ -2,13 +2,25 @@ import { useEffect, useState } from 'react';
 import { toEntryDraft } from '../constants';
 import { combineDateAndTimeToIso } from '../utils/dateTime';
 import { formatDuration } from '../utils/formatDuration';
+import ProjectSelect from './ProjectSelect';
+import TagInput from './TagInput';
 
 const fieldClassName =
   'mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-sky-500 focus:ring-4 focus:ring-sky-100';
 
 const labelClassName = 'block text-sm font-medium text-slate-700';
 
-function EntryCard({ entry, onUpdate, onDelete, isUpdating, isDeleting }) {
+function EntryCard({
+  entry,
+  onUpdate,
+  onDelete,
+  isUpdating,
+  isDeleting,
+  projects,
+  tags,
+  onCreateProject,
+  isCreatingProject,
+}) {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(() => toEntryDraft(entry));
 
@@ -16,7 +28,7 @@ function EntryCard({ entry, onUpdate, onDelete, isUpdating, isDeleting }) {
     setDraft(toEntryDraft(entry));
   }, [entry]);
 
-  const tags = Array.isArray(entry.tags) ? entry.tags : [];
+  const tagList = Array.isArray(entry.tags) ? entry.tags : [];
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -35,11 +47,8 @@ function EntryCard({ entry, onUpdate, onDelete, isUpdating, isDeleting }) {
       entryId: entry.id,
       entry: {
         name: draft.name.trim(),
-        project: draft.project.trim(),
-        tags: draft.tags
-          .split(',')
-          .map((tag) => tag.trim())
-          .filter(Boolean),
+        projectId: draft.projectId,
+        tags: draft.tags,
         startAt: combineDateAndTimeToIso(draft.startDate, draft.startTime),
         endAt: entry.isActive ? null : combineDateAndTimeToIso(draft.endDate, draft.endTime),
         type: draft.type,
@@ -83,7 +92,7 @@ function EntryCard({ entry, onUpdate, onDelete, isUpdating, isDeleting }) {
         <span className={`rounded-full px-3 py-1 font-medium ${entry.isActive ? 'bg-amber-100 text-amber-800' : 'bg-sky-100 text-sky-800'}`}>
           {entry.isActive ? 'active timer' : entry.type}
         </span>
-        {tags.map((tag) => (
+        {tagList.map((tag) => (
           <span className="rounded-full bg-emerald-100 px-3 py-1 font-medium text-emerald-800" key={tag}>
             #{tag}
           </span>
@@ -103,17 +112,24 @@ function EntryCard({ entry, onUpdate, onDelete, isUpdating, isDeleting }) {
                 required
               />
             </label>
-            <label className={labelClassName}>
-              Project
-              <input
-                className={fieldClassName}
-                name="project"
-                value={draft.project}
-                onChange={handleChange}
-                required
-              />
-            </label>
+            <ProjectSelect
+              label="Project"
+              selectedProjectId={draft.projectId}
+              projects={projects}
+              onSelect={(projectId) => setDraft((current) => ({ ...current, projectId }))}
+              onCreateProject={onCreateProject}
+              isCreatingProject={isCreatingProject}
+              disabled={isUpdating}
+            />
           </div>
+
+          <TagInput
+            label="Tags"
+            value={draft.tags}
+            suggestions={tags}
+            onChange={(nextTags) => setDraft((current) => ({ ...current, tags: nextTags }))}
+            disabled={isUpdating}
+          />
 
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <label className={labelClassName}>
@@ -168,23 +184,13 @@ function EntryCard({ entry, onUpdate, onDelete, isUpdating, isDeleting }) {
                 <option value="timer">Timer</option>
               </select>
             </label>
-            <label className={labelClassName}>
-              Tags
-              <input
-                className={fieldClassName}
-                name="tags"
-                value={draft.tags}
-                onChange={handleChange}
-                placeholder="frontend, client"
-              />
-            </label>
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">
             <button
               className="inline-flex items-center justify-center rounded-xl bg-sky-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-600/20 transition hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-60"
               type="submit"
-              disabled={isUpdating || !draft.name.trim() || !draft.project.trim()}
+              disabled={isUpdating || !draft.name.trim() || !draft.projectId}
             >
               {isUpdating ? 'Saving changes...' : 'Save changes'}
             </button>

@@ -1,6 +1,17 @@
 import EntryCard from './EntryCard';
 
-function EntryList({ entries, isLoading, onUpdate, onDelete, isUpdating, isDeleting }) {
+function EntryList({
+  entries,
+  isLoading,
+  onUpdate,
+  onDelete,
+  isUpdating,
+  isDeleting,
+  projects,
+  tags,
+  onCreateProject,
+  isCreatingProject,
+}) {
   return (
     <div className="mt-6 grid gap-4">
       {isLoading ? <p className="text-sm text-slate-500">Loading entries from the API...</p> : null}
@@ -13,6 +24,10 @@ function EntryList({ entries, isLoading, onUpdate, onDelete, isUpdating, isDelet
           onDelete={onDelete}
           isUpdating={isUpdating}
           isDeleting={isDeleting}
+          projects={projects}
+          tags={tags}
+          onCreateProject={onCreateProject}
+          isCreatingProject={isCreatingProject}
         />
       ))}
 

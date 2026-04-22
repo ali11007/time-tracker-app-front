@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { DEFAULT_DRAFT, toEntryDraft } from '../constants';
 import { combineDateAndTimeToIso, currentTime, todayDate } from '../utils/dateTime';
+import ProjectSelect from './ProjectSelect';
+import TagInput from './TagInput';
 
 const fieldClassName =
   'mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-500 focus:ring-4 focus:ring-sky-100';
@@ -18,6 +20,10 @@ function TrackerForm({
   isStartingTimer,
   isStoppingTimer,
   activeTimer,
+  projects,
+  tags,
+  onCreateProject,
+  isCreatingProject,
 }) {
   const [draft, setDraft] = useState(DEFAULT_DRAFT);
 
@@ -50,11 +56,8 @@ function TrackerForm({
 
     await onSubmitManual({
       name: draft.name.trim(),
-      project: draft.project.trim(),
-      tags: draft.tags
-        .split(',')
-        .map((tag) => tag.trim())
-        .filter(Boolean),
+      projectId: draft.projectId,
+      tags: draft.tags,
       startAt: combineDateAndTimeToIso(draft.startDate, draft.startTime),
       endAt: combineDateAndTimeToIso(draft.endDate, draft.endTime),
     });
@@ -65,11 +68,8 @@ function TrackerForm({
   const handleStartTimer = async () => {
     await onStartTimer({
       name: draft.name.trim(),
-      project: draft.project.trim(),
-      tags: draft.tags
-        .split(',')
-        .map((tag) => tag.trim())
-        .filter(Boolean),
+      projectId: draft.projectId,
+      tags: draft.tags,
     });
   };
 
@@ -78,7 +78,7 @@ function TrackerForm({
     resetDraft();
   };
 
-  const canSubmit = draft.name.trim() && draft.project.trim();
+  const canSubmit = draft.name.trim() && draft.projectId;
 
   return (
     <section className="rounded-[1.75rem] border border-slate-200/80 bg-white/90 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur sm:p-6">
@@ -129,28 +129,23 @@ function TrackerForm({
           />
         </label>
 
-        <label className={labelClassName}>
-          Project
-          <input
-            className={fieldClassName}
-            name="project"
-            value={draft.project}
-            onChange={handleChange}
-            placeholder="Project name"
-            required
-          />
-        </label>
+        <ProjectSelect
+          label="Project"
+          selectedProjectId={draft.projectId}
+          projects={projects}
+          onSelect={(projectId) => setDraft((current) => ({ ...current, projectId }))}
+          onCreateProject={onCreateProject}
+          isCreatingProject={isCreatingProject}
+          disabled={isCreating || isStartingTimer || isStoppingTimer}
+        />
 
-        <label className={labelClassName}>
-          Tags (comma-separated)
-          <input
-            className={fieldClassName}
-            name="tags"
-            value={draft.tags}
-            onChange={handleChange}
-            placeholder="e.g. frontend, client, export"
-          />
-        </label>
+        <TagInput
+          label="Tags"
+          value={draft.tags}
+          suggestions={tags}
+          onChange={(nextTags) => setDraft((current) => ({ ...current, tags: nextTags }))}
+          disabled={isCreating || isStartingTimer || isStoppingTimer}
+        />
 
         {entryMode === 'manual' ? (
           <div className="grid gap-4 sm:grid-cols-2">

@@ -19,6 +19,10 @@ export const API_PATHS = {
   timerStart: '/time-entries/timer/start',
   timerStop: (entryId) => `/time-entries/${entryId}/stop`,
   entryById: (entryId) => `/time-entries/${entryId}`,
+  projects: '/projects',
+  projectById: (projectId) => `/projects/${projectId}`,
+  tags: '/tags',
+  tagById: (tagId) => `/tags/${tagId}`,
   exports: {
     csv: '/time-entries/export/csv',
     json: '/time-entries/export/json',
@@ -29,8 +33,8 @@ export const today = todayDate;
 
 export const DEFAULT_DRAFT = {
   name: '',
-  project: '',
-  tags: '',
+  projectId: '',
+  tags: [],
   startDate: todayDate(),
   startTime: currentTime(),
   endDate: todayDate(),
@@ -43,8 +47,8 @@ export const toEntryDraft = (entry) => {
 
   return {
     name: entry.name || '',
-    project: entry.project || '',
-    tags: Array.isArray(entry.tags) ? entry.tags.join(', ') : '',
+    projectId: entry.projectId || '',
+    tags: Array.isArray(entry.tags) ? entry.tags : [],
     startDate: start.date,
     startTime: start.time,
     endDate: end.date,
