@@ -26,9 +26,32 @@ export const downloadFile = (filename, content, type) => {
 };
 
 export const toCsv = (items) => {
-  const headers = ['name', 'project', 'tags', 'date', 'startAt', 'endAt', 'durationSeconds', 'type', 'isActive'];
+  const hasUsers = items.some((item) => item.user);
+  const headers = [
+    ...(hasUsers ? ['userId', 'userEmail', 'username', 'userName'] : []),
+    'name',
+    'project',
+    'tags',
+    'date',
+    'startAt',
+    'endAt',
+    'durationSeconds',
+    'type',
+    'isActive',
+  ];
   const rows = items.map((item) =>
-    [item.name, item.project, getTagsValue(item.tags), item.date, item.startAt, item.endAt, item.durationSeconds, item.type, item.isActive]
+    [
+      ...(hasUsers ? [item.user?.id, item.user?.email, item.user?.username, item.user?.name] : []),
+      item.name,
+      item.project,
+      getTagsValue(item.tags),
+      item.date,
+      item.startAt,
+      item.endAt,
+      item.durationSeconds,
+      item.type,
+      item.isActive,
+    ]
       .map(escapeCsvValue)
       .join(','),
   );

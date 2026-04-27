@@ -5,7 +5,7 @@ const inputClassName =
 
 const normalizeTag = (value) => value.trim().toLowerCase();
 
-function TagInput({ label, value, suggestions, onChange, disabled = false }) {
+function TagInput({ label, value, suggestions, onChange, canCreateTags = false, disabled = false }) {
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
 
@@ -39,7 +39,15 @@ function TagInput({ label, value, suggestions, onChange, disabled = false }) {
       return;
     }
 
-    onChange([...(value || []), trimmedTag]);
+    const savedTag = (suggestions || []).find((tag) => normalizeTag(tag.name) === normalized);
+
+    if (!savedTag && !canCreateTags) {
+      setQuery('');
+      setIsOpen(false);
+      return;
+    }
+
+    onChange([...(value || []), savedTag?.name || trimmedTag]);
     setQuery('');
     setIsOpen(false);
   };
@@ -65,7 +73,7 @@ function TagInput({ label, value, suggestions, onChange, disabled = false }) {
       <div className="flex items-center justify-between gap-3">
         <label className="block text-sm font-medium text-slate-700">{label}</label>
         <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-          Type, enter, or pick saved tags
+          {canCreateTags ? 'Type, enter, or pick saved tags' : 'Pick saved tags'}
         </span>
       </div>
 
@@ -100,11 +108,11 @@ function TagInput({ label, value, suggestions, onChange, disabled = false }) {
             onFocus={() => setIsOpen(true)}
             onBlur={() => window.setTimeout(() => setIsOpen(false), 120)}
             onKeyDown={handleKeyDown}
-            placeholder="Search tags or create a new one"
+            placeholder={canCreateTags ? 'Search tags or create a new one' : 'Search saved tags'}
             disabled={disabled}
           />
 
-          {query.trim() ? (
+          {query.trim() && canCreateTags ? (
             <button
               className="absolute inset-y-0 right-3 my-auto inline-flex h-9 items-center justify-center rounded-full bg-slate-950 px-3 text-xs font-semibold uppercase tracking-[0.18em] text-white"
               onMouseDown={(event) => event.preventDefault()}
@@ -135,7 +143,7 @@ function TagInput({ label, value, suggestions, onChange, disabled = false }) {
                       <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Pick</span>
                     </button>
                   ))
-                ) : query.trim() ? (
+                ) : query.trim() && canCreateTags ? (
                   <button
                     className="w-full rounded-2xl border border-dashed border-sky-200 bg-sky-50 px-4 py-5 text-left text-sm text-sky-800 transition hover:bg-sky-100"
                     onMouseDown={(event) => event.preventDefault()}
@@ -144,6 +152,10 @@ function TagInput({ label, value, suggestions, onChange, disabled = false }) {
                   >
                     Save "{query.trim()}" with this entry
                   </button>
+                ) : query.trim() ? (
+                  <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-500">
+                    No saved tag matches "{query.trim()}". Ask an admin to add it.
+                  </div>
                 ) : (
                   <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-500">
                     All saved tags are already selected.

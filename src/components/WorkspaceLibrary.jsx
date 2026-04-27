@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 const inputClassName =
   'w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-4 focus:ring-sky-100';
 
-function EditableRow({ item, kind, onSave, onDelete, isSaving, isDeleting }) {
+function EditableRow({ item, kind, onSave, onDelete, isSaving, isDeleting, canEdit = false }) {
   const [isEditing, setIsEditing] = useState(false);
   const [draftName, setDraftName] = useState(item.name);
 
@@ -55,30 +55,32 @@ function EditableRow({ item, kind, onSave, onDelete, isSaving, isDeleting }) {
             <p className="text-sm font-semibold text-slate-900">{item.name}</p>
             <p className="text-xs text-slate-500">{kind}</p>
           </div>
-          <div className="flex gap-2">
-            <button
-              className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-              type="button"
-              onClick={() => setIsEditing(true)}
-              disabled={isSaving || isDeleting}
-            >
-              Rename
-            </button>
-            <button
-              className="inline-flex items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
-              type="button"
-              onClick={async () => {
-                try {
-                  await onDelete(item.id);
-                } catch (_error) {
-                  // The parent surfaces the request error banner.
-                }
-              }}
-              disabled={isSaving || isDeleting}
-            >
-              {isDeleting ? 'Deleting...' : 'Delete'}
-            </button>
-          </div>
+          {canEdit ? (
+            <div className="flex gap-2">
+              <button
+                className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                type="button"
+                onClick={() => setIsEditing(true)}
+                disabled={isSaving || isDeleting}
+              >
+                Rename
+              </button>
+              <button
+                className="inline-flex items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+                type="button"
+                onClick={async () => {
+                  try {
+                    await onDelete(item.id);
+                  } catch (_error) {
+                    // The parent surfaces the request error banner.
+                  }
+                }}
+                disabled={isSaving || isDeleting}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          ) : null}
         </div>
       )}
     </div>
@@ -98,6 +100,7 @@ function LibrarySection({
   isCreating,
   isSaving,
   isDeleting,
+  isAdmin = false,
 }) {
   const [draftName, setDraftName] = useState('');
   const visibleItems = useMemo(() => items || [], [items]);
@@ -125,22 +128,28 @@ function LibrarySection({
         </span>
       </div>
 
-      <form className="mt-4 flex flex-col gap-3 sm:flex-row" onSubmit={handleCreate}>
-        <input
-          className={inputClassName}
-          value={draftName}
-          onChange={(event) => setDraftName(event.target.value)}
-          placeholder={createPlaceholder}
-          disabled={isCreating}
-        />
-        <button
-          className="inline-flex items-center justify-center rounded-2xl bg-sky-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-600/20 transition hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-60"
-          type="submit"
-          disabled={isCreating || !draftName.trim()}
-        >
-          {isCreating ? 'Saving...' : createLabel}
-        </button>
-      </form>
+      {isAdmin ? (
+        <form className="mt-4 flex flex-col gap-3 sm:flex-row" onSubmit={handleCreate}>
+          <input
+            className={inputClassName}
+            value={draftName}
+            onChange={(event) => setDraftName(event.target.value)}
+            placeholder={createPlaceholder}
+            disabled={isCreating}
+          />
+          <button
+            className="inline-flex items-center justify-center rounded-2xl bg-sky-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-600/20 transition hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-60"
+            type="submit"
+            disabled={isCreating || !draftName.trim()}
+          >
+            {isCreating ? 'Saving...' : createLabel}
+          </button>
+        </form>
+      ) : (
+        <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          This catalog is read-only for your account. Ask an admin to add or change {title.toLowerCase()}.
+        </div>
+      )}
 
       <div className="mt-4 grid gap-3">
         {visibleItems.length ? (
@@ -153,6 +162,7 @@ function LibrarySection({
               onDelete={onDelete}
               isSaving={isSaving}
               isDeleting={isDeleting}
+              canEdit={isAdmin}
             />
           ))
         ) : (
@@ -181,6 +191,7 @@ function WorkspaceLibrary(props) {
         isCreating={props.isCreatingProject}
         isSaving={props.isUpdatingProject}
         isDeleting={props.isDeletingProject}
+        isAdmin={props.isAdmin}
       />
       <LibrarySection
         title="Tags"
@@ -195,6 +206,7 @@ function WorkspaceLibrary(props) {
         isCreating={props.isCreatingTag}
         isSaving={props.isUpdatingTag}
         isDeleting={props.isDeletingTag}
+        isAdmin={props.isAdmin}
       />
     </section>
   );

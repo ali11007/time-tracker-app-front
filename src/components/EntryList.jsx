@@ -11,6 +11,7 @@ function EntryList({
   tags,
   onCreateProject,
   isCreatingProject,
+  canCreateCatalog = false,
 }) {
   return (
     <div className="mt-6 grid gap-4">
@@ -28,6 +29,7 @@ function EntryList({
           tags={tags}
           onCreateProject={onCreateProject}
           isCreatingProject={isCreatingProject}
+          canCreateCatalog={canCreateCatalog}
         />
       ))}
 

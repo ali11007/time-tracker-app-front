@@ -70,6 +70,7 @@ function App() {
     isDeletingTag,
   } = useWorkspaceCatalog();
   const timer = useTimer(activeEntry);
+  const isAdmin = Boolean(currentUser?.isAdmin);
 
   const withActionError = async (callback) => {
     setActionError('');
@@ -119,13 +120,18 @@ function App() {
                 <span className="rounded-full bg-slate-950 px-3 py-1 text-xs font-medium text-white">
                   {formatUserLabel(currentUser)}
                 </span>
+                {isAdmin ? (
+                  <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-amber-800 ring-1 ring-amber-200">
+                    Admin
+                  </span>
+                ) : null}
               </div>
               <div className="space-y-3">
                 <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
                   Track time against curated projects, shared tags, and exports from one workspace.
                 </h1>
                 <p className="max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
-                  Entries now use a saved project library, while tags can be picked from your shared catalog or created naturally as you log work.
+                  Entries now use a saved project library, while tags are picked from a shared catalog managed by admins.
                 </p>
               </div>
             </div>
@@ -210,6 +216,7 @@ function App() {
             tags={tags}
             onCreateProject={(payload) => withActionError(() => createProject(payload))}
             isCreatingProject={isCreatingProject}
+            canCreateCatalog={isAdmin}
           />
 
           <section className="rounded-[1.75rem] border border-white/70 bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur sm:p-6">
@@ -218,6 +225,7 @@ function App() {
               filterText={filterText}
               onFilterChange={setFilterText}
               isLoading={isLoading}
+              isAdmin={isAdmin}
             />
             <EntryList
               entries={entries}
@@ -230,11 +238,13 @@ function App() {
               tags={tags}
               onCreateProject={(payload) => withActionError(() => createProject(payload))}
               isCreatingProject={isCreatingProject}
+              canCreateCatalog={isAdmin}
             />
           </section>
         </section>
 
         <WorkspaceLibrary
+          isAdmin={isAdmin}
           projects={projects}
           tags={tags}
           onCreateProject={(payload) => withActionError(() => createProject(payload))}
