@@ -153,7 +153,7 @@ function App() {
                 </div>
                 <div className="rounded-[1.4rem] bg-slate-950 px-5 py-4 text-white shadow-lg shadow-slate-950/10">
                   <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Tracked</p>
-                  <strong className="mt-3 block text-2xl font-semibold sm:text-[1.65rem]">
+                  <strong className="mt-3 block text-2xl font-semibold text-[1.5rem]">
                     {formatDuration(totalTrackedSeconds)}
                   </strong>
                 </div>
