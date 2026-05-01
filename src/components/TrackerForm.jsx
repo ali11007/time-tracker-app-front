@@ -24,6 +24,7 @@ function TrackerForm({
   tags,
   onCreateProject,
   isCreatingProject,
+  canCreateCatalog = false,
 }) {
   const [draft, setDraft] = useState(DEFAULT_DRAFT);
 
@@ -136,6 +137,7 @@ function TrackerForm({
           onSelect={(projectId) => setDraft((current) => ({ ...current, projectId }))}
           onCreateProject={onCreateProject}
           isCreatingProject={isCreatingProject}
+          canCreateProject={canCreateCatalog}
           disabled={isCreating || isStartingTimer || isStoppingTimer}
         />
 
@@ -144,6 +146,7 @@ function TrackerForm({
           value={draft.tags}
           suggestions={tags}
           onChange={(nextTags) => setDraft((current) => ({ ...current, tags: nextTags }))}
+          canCreateTags={canCreateCatalog}
           disabled={isCreating || isStartingTimer || isStoppingTimer}
         />
 

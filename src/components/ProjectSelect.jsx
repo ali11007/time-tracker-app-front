@@ -10,6 +10,7 @@ function ProjectSelect({
   onSelect,
   onCreateProject,
   isCreatingProject,
+  canCreateProject = false,
   disabled = false,
 }) {
   const [query, setQuery] = useState('');
@@ -72,17 +73,23 @@ function ProjectSelect({
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-3">
         <label className="block text-sm font-medium text-slate-700">{label}</label>
-        <button
-          className="text-sm font-semibold text-sky-700 transition hover:text-sky-900 disabled:cursor-not-allowed disabled:opacity-60"
-          type="button"
-          onClick={() => {
-            setIsQuickAdding((current) => !current);
-            setQuickName(selectedProject?.name || query);
-          }}
-          disabled={disabled}
-        >
-          {isQuickAdding ? 'Close quick add' : 'Quick add project'}
-        </button>
+        {canCreateProject ? (
+          <button
+            className="text-sm font-semibold text-sky-700 transition hover:text-sky-900 disabled:cursor-not-allowed disabled:opacity-60"
+            type="button"
+            onClick={() => {
+              setIsQuickAdding((current) => !current);
+              setQuickName(selectedProject?.name || query);
+            }}
+            disabled={disabled}
+          >
+            {isQuickAdding ? 'Close quick add' : 'Quick add project'}
+          </button>
+        ) : (
+          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+            Admins add projects
+          </span>
+        )}
       </div>
 
       <div className="relative">
@@ -100,7 +107,7 @@ function ProjectSelect({
             }
           }}
           onBlur={() => window.setTimeout(() => setIsOpen(false), 120)}
-          placeholder={projects.length ? 'Search created projects' : 'Create your first project'}
+          placeholder={projects.length ? 'Search created projects' : 'Ask an admin to add a project'}
           disabled={disabled}
         />
 
@@ -147,7 +154,7 @@ function ProjectSelect({
         ) : null}
       </div>
 
-      {isQuickAdding ? (
+      {isQuickAdding && canCreateProject ? (
         <form
           className="grid gap-3 rounded-2xl border border-sky-100 bg-sky-50/80 p-4 sm:grid-cols-[1fr_auto]"
           onSubmit={handleQuickAdd}

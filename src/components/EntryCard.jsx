@@ -20,6 +20,7 @@ function EntryCard({
   tags,
   onCreateProject,
   isCreatingProject,
+  canCreateCatalog = false,
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(() => toEntryDraft(entry));
@@ -119,6 +120,7 @@ function EntryCard({
               onSelect={(projectId) => setDraft((current) => ({ ...current, projectId }))}
               onCreateProject={onCreateProject}
               isCreatingProject={isCreatingProject}
+              canCreateProject={canCreateCatalog}
               disabled={isUpdating}
             />
           </div>
@@ -128,6 +130,7 @@ function EntryCard({
             value={draft.tags}
             suggestions={tags}
             onChange={(nextTags) => setDraft((current) => ({ ...current, tags: nextTags }))}
+            canCreateTags={canCreateCatalog}
             disabled={isUpdating}
           />
 
