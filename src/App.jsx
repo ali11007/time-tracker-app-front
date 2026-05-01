@@ -29,7 +29,7 @@ const readActionError = (error) =>
   error?.response?.data?.message || error?.message || 'The request failed. Please try again.';
 
 function App() {
-  const [entryMode, setEntryMode] = useState('manual');
+  const [entryMode, setEntryMode] = useState('timer');
   const [filterText, setFilterText] = useState('');
   const [actionError, setActionError] = useState('');
   const { currentUser, logout } = useAuth();
@@ -147,7 +147,7 @@ function App() {
                 </div>
                 <div className="rounded-[1.4rem] bg-slate-950 px-5 py-4 text-white shadow-lg shadow-slate-950/10">
                   <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Tracked</p>
-                  <strong className="mt-3 block text-3xl font-semibold">
+                  <strong className="mt-3 block text-2xl font-semibold sm:text-[1.65rem]">
                     {formatDuration(totalTrackedSeconds)}
                   </strong>
                 </div>
